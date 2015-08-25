@@ -1,0 +1,30 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "noImplicitAny": true,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "out": "../h5build.js",
+        "sourceMap": true
+    },
+    "filesGlob": [
+        "../typings/**/*.d.ts",
+        "../node_modules/typescript/bin/typescript.d.ts",
+        "./**/*.ts"
+    ],
+    "files": [
+        "../typings/bluebird/bluebird.d.ts",
+        "../typings/commander/commander.d.ts",
+        "../typings/jake/jake.d.ts",
+        "../typings/mkdirp/mkdirp.d.ts",
+        "../typings/node/node.d.ts",
+        "../typings/react/react.d.ts",
+        "../typings/rimraf/rimraf.d.ts",
+        "../node_modules/typescript/bin/typescript.d.ts",
+        "./compila_jade.ts",
+        "./fstasks.ts",
+        "./limpar.ts",
+        "./lista_arquivos.ts",
+        "./main.ts"
+    ]
+}
