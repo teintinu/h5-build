@@ -22,6 +22,7 @@
         "../typings/rimraf/rimraf.d.ts",
         "../node_modules/typescript/bin/typescript.d.ts",
         "./compila_jade.ts",
+        "./compila_ts.ts",
         "./fstasks.ts",
         "./limpar.ts",
         "./lista_arquivos.ts",

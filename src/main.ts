@@ -6,16 +6,17 @@ var rimraf = require('rimraf');
 var jaect = require('jaect');
 var ts = require("typescript");
 var commander = require("commander");
+var success = false;
 
 namespace h5build {
 
-    var tasks: { [name: string]: Task } = {}
+    var named_tasks: { [name: string]: Task } = {}
     export var pasta_src = process.cwd() + '/src'
     export var pasta_build = process.cwd() + '/build';
 
     commander
         .version(require(__dirname + '/package.json').version)
-    //      .option('-C, --chdir <path>', 'change the working directory')
+        .option('-v, --verbose', 'Verbose mode')
 
     task({
         name: 'clear',
@@ -24,10 +25,17 @@ namespace h5build {
     }, true);
 
     task({
-        name: 'build',
-        description: "Build files",
+        name: 'build-jade',
+        description: "Transform jade files into typescript files",
         dep_names: ['clear'],
-        dep_fn: compila_jades
+        dep_fn: build_jade
+    }, true);
+
+    task({
+        name: 'build-ts',
+        description: "Transform ts files into javacript files",
+        dep_names: ['build-jade'],
+        fn: build_ts
     }, true);
 
     task({
@@ -41,13 +49,14 @@ namespace h5build {
         .description('clear/build/test/coverage/lint/deploy')
         .action(function() {
             start('default', () => {
-                console.log("END")
+                console.log("Success!");
+                success = true;
             });
         });
 
     commander.parse(process.argv);
 
-    export type TaskFunction = (done: DoneFunction) => void;
+    export type TaskFunction = (done: DoneFunction) => void|Task;
     export type DoneFunction = () => void;
 
     export interface Task {
@@ -55,9 +64,10 @@ namespace h5build {
         description: string,
         fn?: TaskFunction,
         dep_names?: string[],
-        dep_fn?: () => Task[],
+        dep_fn?: () => Task|Task[],
         dep_tasks?: Task[],
-        weight?: number
+        weight?: number,
+        state?: number
     };
 
     export function task(t: Task, cmd?: boolean) {
@@ -67,10 +77,25 @@ namespace h5build {
                 .description(t.description)
                 .action(function() {
                     start(t.name, () => {
-                        console.log('END')
+                        console.log('Success')
+                        success = true;
                     });
                 });
-        return tasks[t.name] = t;
+        return named_tasks[t.name] = t;
+    }
+
+    export function tasks(...list: Task[]) {
+        if (list) {
+            list = list.filter(t=> t != null);
+            if (list.length) {
+                return task({
+                    name: null,
+                    description: null,
+                    dep_tasks: list
+                })
+            }
+        }
+        return null
     }
 
     function start(name: string, done: DoneFunction) {
@@ -82,7 +107,11 @@ namespace h5build {
     }
 
     function exec_task(ident: string, task: Task, done: DoneFunction) {
-        console.log(ident + 'start: ' + task.name);
+        if (task.state === 1) throw new Error("Circular reference");
+        if (task.state === 2) done();
+        task.state = 1;
+        if (commander.verbose)
+            console.log(ident + 'start: ' + task.description);
         var depident = ident + '  ';
 
         var dep_idx = 0;
@@ -97,19 +126,38 @@ namespace h5build {
                 var dep = task.dep_tasks[dep_idx];
                 dep_idx++;
                 process.nextTick(() => {
-                    exec_task(depident, dep, run_dep);
+                    if (dep == null) {
+                        run_dep();
+                    }
+                    else {
+                        exec_task(depident, dep, run_dep);
+                    }
                 });
             }
         }
 
         function after_deps() {
-            console.log(ident + 'end: ' + task.name);
+            if (task.fn) {
+                var subtask: Task = task.fn(task_finish) as Task;
+                if (subtask) {
+                    exec_task(depident, subtask, task_finish)
+                }
+            }
+            else task_finish();
+        }
+
+        function task_finish() {
+            if (task.state === 2)
+                throw new Error("task was fnished");
+            if (commander.verbose)
+                console.log(ident + 'end: ' + task.description);
+            task.state = 2;
             done();
         }
     }
 
     function getTask(name: string) {
-        var task = tasks[name];
+        var task = named_tasks[name];
         if (!task)
             throw "Invalid task: " + name;
         return task;
@@ -120,16 +168,28 @@ namespace h5build {
         if (!task.dep_tasks)
             task.dep_tasks = [];
         if (task.dep_fn) {
-            task.dep_tasks = task.dep_tasks.concat(task.dep_fn());
+            var deps = task.dep_fn();
+            if (Array.isArray(deps))
+                task.dep_tasks = task.dep_tasks.concat(deps);
+            else
+                task.dep_tasks.push(deps);
         }
-        if (task.dep_names)
-            task.dep_names.forEach((dep) => {
-                task.dep_tasks.push(getTask(dep));
-            });
+        if (task.dep_names) {
+            task.dep_tasks = task.dep_names.map((dep) => {
+                return getTask(dep);
+            }).concat(task.dep_tasks);
+        }
         task.dep_tasks.forEach((dep) => {
-            count += count_tasks(dep);
+            if (dep) {
+                count += count_tasks(dep);
+            }
         });
         return count;
     }
 
 }
+
+process.on('exit', function(code: number) {
+    if (!success)
+        console.log('ANORMAL EXIT');
+});

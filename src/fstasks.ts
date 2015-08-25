@@ -1,4 +1,4 @@
-namespace h5build.fstasks {
+namespace h5build.fsTask {
     export function readDir(
         info: {
             root: string,
@@ -7,12 +7,12 @@ namespace h5build.fstasks {
             folder_end_fn?: (folder: string) => Task,
             folder_not_exists_fn?: (folder: string) => Task
         }
-    ) {
+    ): Task {
 
         if (!fs.existsSync(info.root)) {
             if (info.folder_not_exists_fn)
                 return info.folder_not_exists_fn(info.root);
-            return task({ name: null, description: null });
+            return null;
         }
         return task_for_files('');
 
@@ -33,13 +33,17 @@ namespace h5build.fstasks {
                     }
                     return (null as Task);
                 });
+            task_files = task_files.filter(task=> !!task)
             var task_end = info.folder_end_fn && info.folder_end_fn(folder);
-            if (!task_end)
-                task_end = task({ name: null, description: null });
-            if (!task_end.dep_tasks)
-                task_end.dep_tasks = [];
+            if (!task_end) {
+                if (task_files.length) task_end = task({ name: null, description: null });
+                else return task_start;
+            }
+            if (!task_end.dep_tasks) task_end.dep_tasks = [];
+            if (task_start)
+                task_end.dep_tasks.push(task_start);
             task_end.dep_tasks = task_end.dep_tasks.
-                concat(task_files.filter(task=> !!task));
+                concat(task_files);
             return task_end;
         }
     }
@@ -61,13 +65,16 @@ namespace h5build.fstasks {
     }
 
     export function rm(root: string, file: string): Task {
-        return task({
-            name: 'rm ' + file,
-            description: "Remove file " + file,
-            fn: (done) => {
-                fs.rmSync(path.join(root, file));
-                done();
-            }
-        })
+        var fullname = path.join(root, file);
+        if (fs.existsSync(fullname)) {
+            return task({
+                name: 'rm ' + fullname,
+                description: "Remove file " + fullname,
+                fn: (done) => {
+                    fs.unlink(fullname, done);
+                }
+            });
+        }
+        return null as Task;
     }
 }
