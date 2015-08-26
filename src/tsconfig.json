@@ -4,7 +4,8 @@
         "noImplicitAny": true,
         "removeComments": true,
         "preserveConstEnums": true,
-        "out": "../h5build.js",
+        "declaration": false,
+        "outDir": "../lib/",
         "sourceMap": true
     },
     "filesGlob": [
@@ -14,18 +15,18 @@
     ],
     "files": [
         "../typings/bluebird/bluebird.d.ts",
-        "../typings/commander/commander.d.ts",
-        "../typings/jake/jake.d.ts",
+        "../typings/charm/charm.d.ts",
         "../typings/mkdirp/mkdirp.d.ts",
         "../typings/node/node.d.ts",
         "../typings/react/react.d.ts",
-        "../typings/rimraf/rimraf.d.ts",
+        "../typings/yargs/yargs.d.ts",
         "../node_modules/typescript/bin/typescript.d.ts",
         "./compila_jade.ts",
         "./compila_ts.ts",
         "./fstasks.ts",
         "./limpar.ts",
-        "./lista_arquivos.ts",
-        "./main.ts"
+        "./main.ts",
+        "./task.ts",
+        "./test_declare.ts"
     ]
 }

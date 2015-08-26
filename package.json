@@ -2,7 +2,7 @@
   "name": "h5-build",
   "version": "0.0.1",
   "description": "",
-  "bin": "h5build.js",
+  "bin": "lib/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -17,12 +17,13 @@
   },
   "homepage": "https://github.com/thr0w/h5-build",
   "dependencies": {
-    "commander": "^2.8.1",
+    "charm": "^1.0.0",
+    "h5-flux": "0.0.2",
     "jaect": "^0.6.1",
     "jake": "^8.0.12",
     "mkdirp": "^0.5.1",
-    "rimraf": "^2.4.2",
     "tsd": "^0.6.3",
-    "typescript": "^1.5.3"
+    "typescript": "^1.5.3",
+    "yargs": "^3.21.0"
   }
 }
